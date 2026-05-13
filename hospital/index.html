@@ -7,18 +7,19 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Visita Hospital">
 <meta name="theme-color" content="#0f2d4e">
-<link rel="manifest" href="data:application/json,{
-  &quot;name&quot;: &quot;Ficha de Visita Técnica – Hospital&quot;,
-  &quot;short_name&quot;: &quot;Visita Hospital&quot;,
-  &quot;start_url&quot;: &quot;.&quot;,
-  &quot;display&quot;: &quot;standalone&quot;,
-  &quot;background_color&quot;: &quot;#0f2d4e&quot;,
-  &quot;theme_color&quot;: &quot;#0f2d4e&quot;,
-  &quot;icons&quot;: [{
-    &quot;src&quot;: &quot;https://ssl.gstatic.com/docs/spreadsheets/forms/favicon_qp2.png&quot;,
-    &quot;sizes&quot;: &quot;128x128&quot;,
-    &quot;type&quot;: &quot;image/png&quot;
-  }]
+<link rel="manifest" href="data:application/manifest+json,{
+  %22name%22: %22Ficha de Visita Técnica – Hospital%22,
+  %22short_name%22: %22Visita Hospital%22,
+  %22description%22: %22Instituto São Vicente – Formulário offline de visita técnica hospitalar%22,
+  %22start_url%22: %22./%22,
+  %22display%22: %22standalone%22,
+  %22orientation%22: %22portrait%22,
+  %22background_color%22: %22%230f2d4e%22,
+  %22theme_color%22: %22%230f2d4e%22,
+  %22icons%22: [
+    { %22src%22: %22https://img.icons8.com/fluency/96/hospital.png%22, %22sizes%22: %2296x96%22, %22type%22: %22image/png%22 },
+    { %22src%22: %22https://img.icons8.com/fluency/192/hospital.png%22, %22sizes%22: %22192x192%22, %22type%22: %22image/png%22 }
+  ]
 }">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ficha de Visita Técnica – Hospital 2026</title>
@@ -365,7 +366,7 @@
           <label>Município <span class="req">*</span></label>
           <input type="text" name="s1_municipio" id="campo_municipio"
             list="lista_municipios" autocomplete="off"
-            placeholder="Digite ou selecione o município..." required>
+            placeholder="Digite ou selecione o município...">
           <datalist id="lista_municipios"></datalist>
           <p class="hint" id="hint_municipio" style="margin-top:4px">🔄 Carregando municípios do Ceará...</p>
         </div>
@@ -1518,72 +1519,58 @@ async function carregarMunicipios() {
 <iframe name="form_target" id="form_target" style="display:none"></iframe>
 
 <script>
-// ── SERVICE WORKER (cache offline) ──
+// ── SERVICE WORKER – registro externo (sw.js) ──
 if ('serviceWorker' in navigator) {
-  // Service Worker inline via Blob
-  const swCode = `
-    const CACHE = 'visita-hospital-v1';
-    const URLS  = [self.location.href];
-
-    self.addEventListener('install', e => {
-      e.waitUntil(
-        caches.open(CACHE).then(c => c.addAll(URLS))
-      );
-      self.skipWaiting();
-    });
-
-    self.addEventListener('activate', e => {
-      e.waitUntil(
-        caches.keys().then(keys =>
-          Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-        )
-      );
-      self.clients.claim();
-    });
-
-    self.addEventListener('fetch', e => {
-      e.respondWith(
-        caches.match(e.request).then(cached => {
-          if (cached) return cached;
-          return fetch(e.request).then(resp => {
-            if (!resp || resp.status !== 200) return resp;
-            const clone = resp.clone();
-            caches.open(CACHE).then(c => c.put(e.request, clone));
-            return resp;
-          }).catch(() => caches.match(e.request));
-        })
-      );
-    });
-  `;
-
-  const blob = new Blob([swCode], { type: 'application/javascript' });
-  const swUrl = URL.createObjectURL(blob);
-
-  navigator.serviceWorker.register(swUrl, { scope: './' })
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/formularios-isv/hospital/sw.js', {
+      scope: '/formularios-isv/hospital/'
+    })
     .then(reg => {
       console.log('[PWA] Service Worker registrado:', reg.scope);
-      // Verifica atualização
+
+      // Verifica atualização quando o app abre
+      reg.update();
+
       reg.addEventListener('updatefound', () => {
-        console.log('[PWA] Nova versão disponível – atualizando...');
+        const worker = reg.installing;
+        worker.addEventListener('statechange', () => {
+          if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+            const banner = document.getElementById('offline-banner');
+            if (banner) {
+              banner.style.display = 'block';
+              banner.style.background = '#1e8dd2';
+              banner.textContent = '🔄 Nova versão disponível! Feche e reabra o app para atualizar.';
+            }
+          }
+        });
       });
     })
-    .catch(err => console.log('[PWA] SW não suportado neste contexto:', err.message));
+    .catch(err => console.warn('[PWA] Service Worker erro:', err.message));
+  });
 }
 
-// ── BANNER "ADICIONAR À TELA INICIAL" ──
+// ── INSTALAR COMO APP ──
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   deferredPrompt = e;
-  // Mostra botão de instalação
   const btn = document.getElementById('btn-instalar');
   if (btn) {
     btn.style.display = 'block';
-    btn.addEventListener('click', () => {
+    btn.onclick = () => {
       deferredPrompt.prompt();
-      deferredPrompt.userChoice.then(() => { btn.style.display = 'none'; });
-    });
+      deferredPrompt.userChoice.then(() => {
+        btn.style.display = 'none';
+        deferredPrompt = null;
+      });
+    };
   }
+});
+
+window.addEventListener('appinstalled', () => {
+  const btn = document.getElementById('btn-instalar');
+  if (btn) btn.style.display = 'none';
+  console.log('[PWA] App instalado!');
 });
 </script>
 
