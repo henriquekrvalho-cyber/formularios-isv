@@ -7,19 +7,18 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Visita Hospital">
 <meta name="theme-color" content="#0f2d4e">
-<link rel="manifest" href="data:application/manifest+json,{
-  %22name%22: %22Ficha de Visita Técnica – Hospital%22,
-  %22short_name%22: %22Visita Hospital%22,
-  %22description%22: %22Instituto São Vicente – Formulário offline de visita técnica hospitalar%22,
-  %22start_url%22: %22./%22,
-  %22display%22: %22standalone%22,
-  %22orientation%22: %22portrait%22,
-  %22background_color%22: %22%230f2d4e%22,
-  %22theme_color%22: %22%230f2d4e%22,
-  %22icons%22: [
-    { %22src%22: %22https://img.icons8.com/fluency/96/hospital.png%22, %22sizes%22: %2296x96%22, %22type%22: %22image/png%22 },
-    { %22src%22: %22https://img.icons8.com/fluency/192/hospital.png%22, %22sizes%22: %22192x192%22, %22type%22: %22image/png%22 }
-  ]
+<link rel="manifest" href="data:application/json,{
+  &quot;name&quot;: &quot;Ficha de Visita Técnica – Hospital&quot;,
+  &quot;short_name&quot;: &quot;Visita Hospital&quot;,
+  &quot;start_url&quot;: &quot;.&quot;,
+  &quot;display&quot;: &quot;standalone&quot;,
+  &quot;background_color&quot;: &quot;#0f2d4e&quot;,
+  &quot;theme_color&quot;: &quot;#0f2d4e&quot;,
+  &quot;icons&quot;: [{
+    &quot;src&quot;: &quot;https://ssl.gstatic.com/docs/spreadsheets/forms/favicon_qp2.png&quot;,
+    &quot;sizes&quot;: &quot;128x128&quot;,
+    &quot;type&quot;: &quot;image/png&quot;
+  }]
 }">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ficha de Visita Técnica – Hospital 2026</title>
@@ -366,7 +365,7 @@
           <label>Município <span class="req">*</span></label>
           <input type="text" name="s1_municipio" id="campo_municipio"
             list="lista_municipios" autocomplete="off"
-            placeholder="Digite ou selecione o município...">
+            placeholder="Digite ou selecione o município..." required>
           <datalist id="lista_municipios"></datalist>
           <p class="hint" id="hint_municipio" style="margin-top:4px">🔄 Carregando municípios do Ceará...</p>
         </div>
@@ -961,16 +960,7 @@
 // ─────────────────────────────────────────────
 // ⚙ CONFIGURAÇÃO — cole aqui a URL do Apps Script
 // ─────────────────────────────────────────────
-// URL automática – detecta se está rodando no Apps Script
-const APPS_SCRIPT_URL = (() => {
-  const url = window.location.href;
-  // Se estiver no Apps Script (/exec ou /dev), usa a mesma URL para POST
-  if (url.includes('script.google.com') || url.includes('googleusercontent.com')) {
-    return url.split('?')[0]; // remove query params
-  }
-  // Fallback para desenvolvimento local
-  return 'https://script.google.com/macros/s/AKfycbwTLp6bZAL4PBOZfLskEKnvBBV5Qt2-OLWfm06UBPaa8DmtVLd32J1hfKrfA2g2dys/exec';
-})();
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwTLp6bZAL4PBOZfLskEKnvBBV5Qt2-OLWfm06UBPaa8DmtVLd32J1hfKrfA2g2dys/exec';
 
 // ─────────────────────────────────────────────
 // DOCUMENTOS (Seção 2)
@@ -1526,11 +1516,8 @@ if ('serviceWorker' in navigator) {
       scope: '/formularios-isv/hospital/'
     })
     .then(reg => {
-      console.log('[PWA] Service Worker registrado:', reg.scope);
-
-      // Verifica atualização quando o app abre
+      console.log('[PWA] Service Worker OK:', reg.scope);
       reg.update();
-
       reg.addEventListener('updatefound', () => {
         const worker = reg.installing;
         worker.addEventListener('statechange', () => {
@@ -1545,7 +1532,7 @@ if ('serviceWorker' in navigator) {
         });
       });
     })
-    .catch(err => console.warn('[PWA] Service Worker erro:', err.message));
+    .catch(err => console.warn('[PWA] SW erro:', err.message));
   });
 }
 
@@ -1570,7 +1557,6 @@ window.addEventListener('beforeinstallprompt', e => {
 window.addEventListener('appinstalled', () => {
   const btn = document.getElementById('btn-instalar');
   if (btn) btn.style.display = 'none';
-  console.log('[PWA] App instalado!');
 });
 </script>
 
